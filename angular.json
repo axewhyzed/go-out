@@ -40,17 +40,17 @@
           "configurations": {
             "production": {
               "styles": [
-                "/assets/fontawesome/css/all.css"
+                "public/assets/fontawesome/css/all.css"
               ],
               "scripts": [
-                "/assets/fontawesome/js/all.js"
+                "public/assets/fontawesome/js/all.js"
               ],
               "baseHref": "/go-out/",
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "4MB"
                 },
                 {
                   "type": "anyComponentStyle",
