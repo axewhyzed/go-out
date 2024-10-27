@@ -104,4 +104,13 @@ export class MapComponent implements AfterViewInit {
       }));
     }
   }
+  
+  public centerToUserLocation(): void {
+    if (this.latitude !== null && this.longitude !== null) {
+      this.setMapCenter(this.latitude, this.longitude);
+    } else {
+      console.warn('User location is not available.');
+    }
+  }
+  
 }

@@ -1,0 +1,9 @@
+#locate-button{
+    background-image: url('../../assets/location-dot-solid.svg');
+    height: 2.7rem;
+    width: 2.1rem;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border: 0;
+    /* border-radius: 50%; */
+}
