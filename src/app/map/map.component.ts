@@ -5,17 +5,24 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
-import TileWMS from 'ol/source/TileWMS';
+import VectorImageLayer from 'ol/layer/VectorImage';
+import { Vector as VectorSource } from 'ol/source';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import { fromLonLat } from 'ol/proj';
+import Style from 'ol/style/Style';
+import Icon from 'ol/style/Icon';
 
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [],
   templateUrl: './map.component.html',
-  styleUrl: './map.component.css',
+  styleUrls: ['./map.component.css'],
 })
 export class MapComponent implements AfterViewInit {
   private map!: Map;
+  private latitude: number | null = null; // Property to store latitude
+  private longitude: number | null = null; // Property to store longitude
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
@@ -27,41 +34,58 @@ export class MapComponent implements AfterViewInit {
   }
 
   private initMap(): void {
-    this.map = new Map({
-      target: 'map', // The ID of the HTML element to render the map
-      layers: [
-        new TileLayer({
-          source: new OSM(), // Using OpenStreetMap as the base layer
-        }),
-        // new TileLayer({
-        //   source: new TileWMS({
-        //     url: 'https://ahocevar.com/geoserver/wms',
-        //     params: {'LAYERS': 'topp:states', 'TILED': true},
-        //     serverType: 'geoserver',
-        //     // Countries have transparency, so do not fade tiles:
-        //     transition: 0,
-        //   }),
-        // }),
-      ],
-      view: new View({
-        center: [0, 0], // Set the initial center coordinates (in EPSG:3857)
-        zoom: 2, // Initial zoom level
+    const osmLayer = new TileLayer({
+      source: new OSM(),
+    });
+
+    const vectorLayer = new VectorImageLayer({
+      source: new VectorSource({
+        features: this.createFeatures(), // Create your features here
       }),
     });
+
+    this.map = new Map({
+      target: 'map',
+      layers: [osmLayer, vectorLayer],
+      view: new View({
+        center: fromLonLat([0, 0]),
+        zoom: 2,
+      }),
+    });
+  }
+
+  private createFeatures(): Feature[] {
+    const features: Feature[] = [];
+    
+    if (this.latitude !== null && this.longitude !== null) {
+      // Create a point feature from user location
+      const point = new Point(fromLonLat([this.longitude, this.latitude]));
+      const feature = new Feature(point);
+
+      feature.setStyle(new Style({
+        image: new Icon({
+          src: 'assets/check.png', // Path to your marker icon
+          scale: 1, // Adjust scale as needed
+        }),
+      }));
+      features.push(feature);
+    }
+
+    return features;
   }
 
   private getUserLocation(): void {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          this.setMapCenter(latitude, longitude);
+          this.latitude = position.coords.latitude; // Store latitude
+          this.longitude = position.coords.longitude; // Store longitude
+          this.setMapCenter(this.latitude, this.longitude);
         },
         (error) => {
           console.error('Error getting location: ', error);
-          // Handle error, e.g., default to a fixed location
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 } // Options to improve accuracy
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
       console.error('Geolocation is not supported by this browser.');
@@ -69,22 +93,15 @@ export class MapComponent implements AfterViewInit {
   }
 
   private setMapCenter(latitude: number, longitude: number): void {
-    const coords = this.convertLatLngToEPSG3857(latitude, longitude);
-    // Throttle the view update
+    const coords = fromLonLat([longitude, latitude]);
     if (this.map) {
       this.map.getView().setCenter(coords);
-      this.map.getView().setZoom(12);
+      this.map.getView().setZoom(18);
+      this.map.addLayer(new VectorImageLayer({
+        source: new VectorSource({
+          features: this.createFeatures(), // Create features after setting coordinates
+        }),
+      }));
     }
-  }
-
-  // Convert Lat/Lng to EPSG:3857 more efficiently
-  private convertLatLngToEPSG3857(lat: number, lon: number): number[] {
-    const x = (lon * 20037508.34) / 180;
-    const y =
-      ((Math.log(Math.tan(((45 + lat / 2) * Math.PI) / 180)) /
-        (Math.PI / 180)) *
-        20037508.34) /
-      180;
-    return [x, y];
   }
 }
