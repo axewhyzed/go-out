@@ -15,6 +15,7 @@
           "options": {
             "outputPath": "dist/go-out",
             "index": "src/index.html",
+            "baseHref": "/",
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
@@ -38,6 +39,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/go-out/",
               "budgets": [
                 {
                   "type": "initial",
