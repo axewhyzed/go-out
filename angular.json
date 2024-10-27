@@ -39,6 +39,12 @@
           },
           "configurations": {
             "production": {
+              "styles": [
+                "/assets/fontawesome/css/all.css"
+              ],
+              "scripts": [
+                "/assets/fontawesome/js/all.js"
+              ],
               "baseHref": "/go-out/",
               "budgets": [
                 {
