@@ -12,6 +12,9 @@ import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
+import Text from 'ol/style/Text';
 
 @Component({
   selector: 'app-map',
@@ -56,19 +59,42 @@ export class MapComponent implements AfterViewInit {
 
   private createFeatures(): Feature[] {
     const features: Feature[] = [];
-    
+
     if (this.latitude !== null && this.longitude !== null) {
       // Create a point feature from user location
       const point = new Point(fromLonLat([this.longitude, this.latitude]));
       const feature = new Feature(point);
 
-      feature.setStyle(new Style({
-        image: new Icon({
-          src: 'assets/check.png', // Path to your marker icon
-          scale: 1, // Adjust scale as needed
-        }),
-      }));
+      feature.setStyle(
+        new Style({
+          image: new Icon({
+            src: 'assets/location-dot-solid.png', // Path to your marker icon
+            scale: 0.07,
+          }),
+        })
+      );
+
+      // Create a text label feature
+      const labelFeature = new Feature(point);
+      labelFeature.setStyle(
+        new Style({
+          text: new Text({
+            text: 'You are here', // Label text
+            offsetY: -25, // Adjust the vertical position of the label
+            fill: new Fill({
+              color: 'black', // Label fill color
+            }),
+            stroke: new Stroke({
+              color: 'white', // Label stroke color
+              width: 2,
+            }),
+            font: '12px Calibri,sans-serif', // Font for the label
+          }),
+        })
+      );
+
       features.push(feature);
+      features.push(labelFeature);
     }
 
     return features;
@@ -97,14 +123,16 @@ export class MapComponent implements AfterViewInit {
     if (this.map) {
       this.map.getView().setCenter(coords);
       this.map.getView().setZoom(18);
-      this.map.addLayer(new VectorImageLayer({
-        source: new VectorSource({
-          features: this.createFeatures(), // Create features after setting coordinates
-        }),
-      }));
+      this.map.addLayer(
+        new VectorImageLayer({
+          source: new VectorSource({
+            features: this.createFeatures(), // Create features after setting coordinates
+          }),
+        })
+      );
     }
   }
-  
+
   public centerToUserLocation(): void {
     if (this.latitude !== null && this.longitude !== null) {
       this.setMapCenter(this.latitude, this.longitude);
@@ -112,5 +140,4 @@ export class MapComponent implements AfterViewInit {
       console.warn('User location is not available.');
     }
   }
-  
 }
