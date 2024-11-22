@@ -1,20 +1,9 @@
 import { AfterViewInit, Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import 'ol/ol.css';
-import Map from 'ol/Map';
-import View from 'ol/View';
-import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
-import VectorImageLayer from 'ol/layer/VectorImage';
-import { Vector as VectorSource } from 'ol/source';
-import Feature from 'ol/Feature';
-import Point from 'ol/geom/Point';
-import { fromLonLat } from 'ol/proj';
-import Style from 'ol/style/Style';
-import Icon from 'ol/style/Icon';
-import Fill from 'ol/style/Fill';
-import Stroke from 'ol/style/Stroke';
-import Text from 'ol/style/Text';
+import { environment } from '../../environments/environment';
+import * as mapboxgl from 'mapbox-gl';
+
+// The mapbox-gl.d.ts declaration file automatically adds the mapboxgl global variable.
 
 @Component({
   selector: 'app-map',
@@ -23,9 +12,9 @@ import Text from 'ol/style/Text';
   styleUrls: ['./map.component.css'],
 })
 export class MapComponent implements AfterViewInit {
-  private map!: Map;
-  private latitude: number | null = null; // Property to store latitude
-  private longitude: number | null = null; // Property to store longitude
+  private map!: mapboxgl.Map;
+  private latitude: number | null = null;
+  private longitude: number | null = null;
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
@@ -37,76 +26,51 @@ export class MapComponent implements AfterViewInit {
   }
 
   private initMap(): void {
-    const osmLayer = new TileLayer({
-      source: new OSM(),
+    const apiKey = environment.mapboxApiKey; // Fetch the Mapbox API key from environment
+
+    // Initialize the mapbox map
+    this.map = new mapboxgl.Map({
+      accessToken: apiKey,
+      container: 'map', // ID of the div to hold the map
+      style: 'mapbox://styles/mapbox/streets-v11', // Style of the map
+      center: [0, 0], // Initial center [longitude, latitude]
+      zoom: 2, // Initial zoom level
     });
 
-    const vectorLayer = new VectorImageLayer({
-      source: new VectorSource({
-        features: this.createFeatures(), // Create your features here
-      }),
-    });
+    // Add a geolocate control to track user location
+    this.map.addControl(new mapboxgl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+    }));
 
-    this.map = new Map({
-      target: 'map',
-      layers: [osmLayer, vectorLayer],
-      view: new View({
-        center: fromLonLat([0, 0]),
-        zoom: 2,
-      }),
+    // Add a marker once the map has loaded
+    this.map.on('load', () => {
+      if (this.latitude && this.longitude) {
+        this.addMarker(this.latitude, this.longitude);
+      }
     });
   }
 
-  private createFeatures(): Feature[] {
-    const features: Feature[] = [];
+  private addMarker(latitude: number, longitude: number): void {
+    new mapboxgl.Marker()
+      .setLngLat([longitude, latitude])
+      .setPopup(new mapboxgl.Popup().setHTML('<p>You are here</p>'))
+      .addTo(this.map);
 
-    if (this.latitude !== null && this.longitude !== null) {
-      // Create a point feature from user location
-      const point = new Point(fromLonLat([this.longitude, this.latitude]));
-      const feature = new Feature(point);
-
-      feature.setStyle(
-        new Style({
-          image: new Icon({
-            src: 'assets/location-dot-solid.png', // Path to your marker icon
-            scale: 0.07,
-          }),
-        })
-      );
-
-      // Create a text label feature
-      const labelFeature = new Feature(point);
-      labelFeature.setStyle(
-        new Style({
-          text: new Text({
-            text: 'You are here', // Label text
-            offsetY: -25, // Adjust the vertical position of the label
-            fill: new Fill({
-              color: 'black', // Label fill color
-            }),
-            stroke: new Stroke({
-              color: 'white', // Label stroke color
-              width: 2,
-            }),
-            font: '12px Calibri,sans-serif', // Font for the label
-          }),
-        })
-      );
-
-      features.push(feature);
-      features.push(labelFeature);
-    }
-
-    return features;
+    // Center the map to user's location
+    this.map.setCenter([longitude, latitude]);
+    this.map.setZoom(18); // Optional: Adjust zoom level
   }
 
   private getUserLocation(): void {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          this.latitude = position.coords.latitude; // Store latitude
-          this.longitude = position.coords.longitude; // Store longitude
-          this.setMapCenter(this.latitude, this.longitude);
+          this.latitude = position.coords.latitude;
+          this.longitude = position.coords.longitude;
+          if (this.map) {
+            this.addMarker(this.latitude, this.longitude);
+          }
         },
         (error) => {
           console.error('Error getting location: ', error);
@@ -118,24 +82,9 @@ export class MapComponent implements AfterViewInit {
     }
   }
 
-  private setMapCenter(latitude: number, longitude: number): void {
-    const coords = fromLonLat([longitude, latitude]);
-    if (this.map) {
-      this.map.getView().setCenter(coords);
-      this.map.getView().setZoom(18);
-      this.map.addLayer(
-        new VectorImageLayer({
-          source: new VectorSource({
-            features: this.createFeatures(), // Create features after setting coordinates
-          }),
-        })
-      );
-    }
-  }
-
   public centerToUserLocation(): void {
-    if (this.latitude !== null && this.longitude !== null) {
-      this.setMapCenter(this.latitude, this.longitude);
+    if (this.latitude !== null && this.longitude !== null && this.map) {
+      this.addMarker(this.latitude, this.longitude);
     } else {
       console.warn('User location is not available.');
     }
