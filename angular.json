@@ -41,6 +41,7 @@
           "configurations": {
             "production": {
               "styles": [
+                "src/styles.css",
                 "public/assets/fontawesome/css/all.css"
               ],
               "scripts": [
