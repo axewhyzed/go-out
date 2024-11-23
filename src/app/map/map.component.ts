@@ -5,7 +5,6 @@ import * as mapboxgl from 'mapbox-gl';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import { Feature, Geometry } from 'geojson';
 import { CommonModule } from '@angular/common';
-import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css'
 
 interface MapboxFeature extends Feature<Geometry, GeoJSON.GeoJsonProperties> {
   center?: [number, number]; // Add the 'center' property
