@@ -104,7 +104,9 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css",
+              "https://api.mapbox.com/mapbox-gl-geocoder/v4.10.0/mapbox-gl-geocoder.css"
             ],
             "scripts": []
           }

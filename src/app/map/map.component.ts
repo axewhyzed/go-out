@@ -2,9 +2,14 @@ import { AfterViewInit, Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../environments/environment';
 import * as mapboxgl from 'mapbox-gl';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import { Feature, Geometry } from 'geojson';
 import { CommonModule } from '@angular/common';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css'
 
-// The mapbox-gl.d.ts declaration file automatically adds the mapboxgl global variable.
+interface MapboxFeature extends Feature<Geometry, GeoJSON.GeoJsonProperties> {
+  center?: [number, number]; // Add the 'center' property
+}
 
 @Component({
   selector: 'app-map',
@@ -20,11 +25,16 @@ export class MapComponent implements AfterViewInit {
 
   // Define available map styles
   public mapStyles = [
-    { name: 'Streets', style: 'mapbox://styles/mapbox/streets-v11' },
-    { name: 'Outdoors', style: 'mapbox://styles/mapbox/outdoors-v11' },
+    { name: 'Standard', style: 'mapbox://styles/mapbox/standard' },
+    { name: 'New Satellite', style: 'mapbox://styles/mapbox/standard-satellite' },
+    { name: 'Streets', style: 'mapbox://styles/mapbox/streets-v12' },
+    { name: 'Outdoors', style: 'mapbox://styles/mapbox/outdoors-v12' },
     { name: 'Satellite', style: 'mapbox://styles/mapbox/satellite-v9' },
-    { name: 'Dark', style: 'mapbox://styles/mapbox/dark-v10' },
-    { name: 'Light', style: 'mapbox://styles/mapbox/light-v10' },
+    { name: 'Satellite Streets', style: 'mapbox://styles/mapbox/satellite-streets-v12' },
+    { name: 'Nav Day', style: 'mapbox://styles/mapbox/navigation-day-v1' },
+    { name: 'Nav Night', style: 'mapbox://styles/mapbox/navigation-night-v1' },
+    { name: 'Dark', style: 'mapbox://styles/mapbox/dark-v11' },
+    { name: 'Light', style: 'mapbox://styles/mapbox/light-v11' },
   ];
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
@@ -33,6 +43,7 @@ export class MapComponent implements AfterViewInit {
     if (isPlatformBrowser(this.platformId)) {
       this.initMap();
       this.getUserLocation();
+      this.addSearchBar();
     }
   }
 
@@ -107,5 +118,26 @@ export class MapComponent implements AfterViewInit {
     if (this.map) {
       this.map.setStyle(style);
     }
+  }
+
+  private addSearchBar(): void {
+    const geocoder = new MapboxGeocoder({
+      accessToken: environment.mapboxApiKey,
+      mapboxgl: mapboxgl, // Required for integration
+      placeholder: 'Search for places',
+      proximity: { longitude: 0, latitude: 0 },
+      limit: 5,
+    });
+  
+    this.map.addControl(geocoder, 'top');
+  
+    // Use the extended type for the event
+    geocoder.on('result', (event: { result: MapboxFeature }) => {
+      const coords = event.result.center; // Safe access to 'center'
+      if (coords) {
+        this.map.setCenter(coords);
+        this.map.setZoom(15); // Zoom in
+      }
+    });
   }
 }
