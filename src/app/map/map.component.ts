@@ -2,6 +2,7 @@ import { AfterViewInit, Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../environments/environment';
 import * as mapboxgl from 'mapbox-gl';
+import { CommonModule } from '@angular/common';
 
 // The mapbox-gl.d.ts declaration file automatically adds the mapboxgl global variable.
 
@@ -10,11 +11,21 @@ import * as mapboxgl from 'mapbox-gl';
   standalone: true,
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.css'],
+  imports: [CommonModule]
 })
 export class MapComponent implements AfterViewInit {
   private map!: mapboxgl.Map;
   private latitude: number | null = null;
   private longitude: number | null = null;
+
+  // Define available map styles
+  public mapStyles = [
+    { name: 'Streets', style: 'mapbox://styles/mapbox/streets-v11' },
+    { name: 'Outdoors', style: 'mapbox://styles/mapbox/outdoors-v11' },
+    { name: 'Satellite', style: 'mapbox://styles/mapbox/satellite-v9' },
+    { name: 'Dark', style: 'mapbox://styles/mapbox/dark-v10' },
+    { name: 'Light', style: 'mapbox://styles/mapbox/light-v10' },
+  ];
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
@@ -32,7 +43,7 @@ export class MapComponent implements AfterViewInit {
     this.map = new mapboxgl.Map({
       accessToken: apiKey,
       container: 'map', // ID of the div to hold the map
-      style: 'mapbox://styles/mapbox/streets-v11', // Style of the map
+      style: this.mapStyles[0].style, // Style of the map
       center: [0, 0], // Initial center [longitude, latitude]
       zoom: 2, // Initial zoom level
     });
@@ -87,6 +98,14 @@ export class MapComponent implements AfterViewInit {
       this.addMarker(this.latitude, this.longitude);
     } else {
       console.warn('User location is not available.');
+    }
+  }
+
+  public changeMapStyle(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement; // Type assertion
+    const style = selectElement.value; // Access the value property safely
+    if (this.map) {
+      this.map.setStyle(style);
     }
   }
 }
